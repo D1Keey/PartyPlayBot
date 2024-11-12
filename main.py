@@ -1,63 +1,53 @@
 import os
 import logging
-from flask import Flask, request
-from telegram import Update, Bot
-from telegram.ext import Dispatcher, CommandHandler, MessageHandler, Filters, Application
+from telegram import Bot, Update
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 import openai
 
-# Настройка логирования
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Загрузка ключей из переменных окружения
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not TELEGRAM_TOKEN or not OPENAI_API_KEY:
+    raise ValueError("Токены TELEGRAM_TOKEN и OPENAI_API_KEY должны быть установлены.")
 
-# Настройки для OpenAI и Telegram
-OPENAI_API_KEY = "your-openai-api-key"
-TELEGRAM_TOKEN = "your-telegram-bot-token"
+# Инициализация OpenAI API
 openai.api_key = OPENAI_API_KEY
 
-# Инициализация Telegram бота
-bot = Bot(TELEGRAM_TOKEN)
-app = Flask(__name__)
-
-# Обработчик команды /start
-async def start(update: Update, context):
-    await update.message.reply_text("Привет! Я бот, который использует OpenAI.")
-
-# Обработчик текстовых сообщений
-async def handle_message(update: Update, context):
-    user_message = update.message.text
-    response = openai.Completion.create(
-        model="gpt-3.5-turbo",  # Обновите модель на актуальную, если нужно
-        prompt=user_message,
-        max_tokens=150
-    )
-    answer = response.choices[0].text.strip()
-    await update.message.reply_text(answer)
-
-# Создаем приложение Telegram
+# Создание бота
+bot = Bot(token=TELEGRAM_TOKEN)
 application = Application.builder().token(TELEGRAM_TOKEN).build()
 
-# Добавляем обработчики команд и сообщений
-application.add_handler(CommandHandler("start", start))
-application.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+# Настройка логирования
+logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-@app.route("/")
-def home():
-    return "Bot is running!"
-
-@app.route("/webhook", methods=["POST"])
-def webhook():
-    # Обрабатываем входящие сообщения
-    json_str = request.get_data().decode("UTF-8")
+# Запрос на создание ответа через OpenAI с новой моделью
+async def respond_to_user(update: Update, context: CallbackContext) -> None:
+    user_message = update.message.text
     try:
-        update = Update.de_json(json_str, bot)
-        application.update_queue.put(update)
-        return "OK", 200
+        # Используем модель GPT-3.5 turbo для ответа
+        response = await openai.Completion.create(
+            model="gpt-3.5-turbo",  # Используем новую модель
+            prompt=user_message,
+            max_tokens=100
+        )
+        await update.message.reply_text(response['choices'][0]['text'].strip())  # Исправление доступа к данным
     except Exception as e:
-        logger.error(f"Error processing webhook: {e}")
-        return "Error", 500
+        await update.message.reply_text("Произошла ошибка при обработке вашего запроса.")
+        logger.error(f"Ошибка OpenAI API: {e}")
+
+# Обработчик команды /start
+async def start(update: Update, context: CallbackContext) -> None:
+    await update.message.reply_text("Привет! Я бот на базе GPT. Напиши мне что-нибудь!")
+
+# Добавление обработчиков команд
+application.add_handler(CommandHandler("start", start))
+application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, respond_to_user))
+
+# Запуск Telegram бота с использованием polling
+def start_telegram_bot():
+    application.run_polling()
 
 if __name__ == "__main__":
-    # Настройка порта
-    port = int(os.getenv("PORT", 5000))  # Используем переменную окружения PORT для Render
-    # Запуск Flask-приложения
-    app.run(host="0.0.0.0", port=port)
+    # Запуск Telegram бота
+    start_telegram_bot()
