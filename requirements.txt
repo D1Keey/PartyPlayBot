@@ -1,3 +1,7 @@
 python-telegram-bot==20.0
 flask
+<<<<<<< HEAD
 openai
+=======
+openai
+>>>>>>> 16ccddb46d206a9dc63f800b1254920447bd5057
