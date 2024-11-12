@@ -46,9 +46,3 @@ def main():
     asyncio.run(application.start_polling())
     app.run(host='0.0.0.0', port=int(os.getenv("PORT", 5000)))
 
-if __name__ == '__main__':
-<<<<<<< HEAD
-    main()
-=======
-    main()
->>>>>>> 16ccddb46d206a9dc63f800b1254920447bd5057
