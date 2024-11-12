@@ -26,7 +26,7 @@ async def start(update: Update, context):
 async def handle_message(update: Update, context):
     user_message = update.message.text
     response = openai.Completion.create(
-        model="text-davinci-003",  # Обновите модель на актуальную, если нужно
+        model="gpt-3.5-turbo",  # Обновите модель на актуальную, если нужно
         prompt=user_message,
         max_tokens=150
     )
