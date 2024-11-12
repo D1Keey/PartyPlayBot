@@ -1,9 +1,10 @@
 import os
+import logging
 from flask import Flask, request
-from telegram import Bot
+from telegram import Bot, Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 import openai
-import logging
+import asyncio
 
 # Загрузка ключей из переменных окружения
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -58,17 +59,27 @@ async def set_webhook():
     await bot.set_webhook(url)
     print("Webhook установлен!")
 
-# Вызов функции для установки webhook
-import asyncio
-asyncio.run(set_webhook())
+# Функция для запуска Telegram бота с Webhook
+def start_telegram_bot():
+    application.run_webhook(
+        listen="0.0.0.0", 
+        port=int(os.getenv("PORT", 5000)), 
+        url_path="YOUR_WEBHOOK_PATH"  # Укажите правильный путь webhook
+    )
 
-# Flask сервер для обработки запросов
+# Запуск Flask сервера в отдельном потоке
 def run_flask():
     app.run(host='0.0.0.0', port=int(os.getenv("PORT", 5000)))
 
 if __name__ == "__main__":
-    # Запуск Flask сервера
-    run_flask()
+    # Устанавливаем webhook перед запуском
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(set_webhook())
+    
+    # Запуск Flask сервера и Telegram бота
+    from threading import Thread
+    flask_thread = Thread(target=run_flask)
+    flask_thread.start()
 
-    # Запуск Telegram бота с Webhook (не используем polling, чтобы избежать конфликтов)
-    application.run_webhook(listen="0.0.0.0", port=int(os.getenv("PORT", 5000)), url_path="YOUR_WEBHOOK_PATH")
+    # Запуск Telegram бота с Webhook
+    start_telegram_bot()
