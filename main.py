@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, jsonify
+from flask import Flask
 from telegram import Bot, Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 import openai
@@ -52,35 +52,9 @@ application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, respond_
 def home():
     return "Бот работает!"
 
-# Обработчик webhook
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    try:
-        json_str = request.get_data(as_text=True)
-        update = Update.de_json(json_str, bot)
-        application.process_update(update)
-        return jsonify({"status": "ok"}), 200
-    except Exception as e:
-        logger.error(f"Ошибка при обработке webhook: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-# Функция для настройки webhook (асинхронная)
-async def set_webhook():
-    url = "https://partyplaybot.onrender.com/webhook"  # Укажите свой URL с путем
-    await bot.set_webhook(url)
-    print("Webhook установлен!")
-
-# Вызов функции для установки webhook
-import asyncio
-asyncio.run(set_webhook())
-
-# Функция для запуска Telegram бота с Webhook
+# Функция для запуска Telegram бота с polling
 def start_telegram_bot():
-    application.run_webhook(
-        listen="0.0.0.0", 
-        port=int(os.getenv("PORT", 5000)), 
-        url_path="webhook"  # Путь для webhook
-    )
+    application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 # Flask сервер для обработки запросов
 def run_flask():
@@ -90,5 +64,5 @@ if __name__ == "__main__":
     # Запуск Flask сервера
     run_flask()
 
-    # Запуск Telegram бота с Webhook
+    # Запуск Telegram бота с поллингом
     start_telegram_bot()
