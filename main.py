@@ -4,7 +4,6 @@ from telegram import Bot, Update  # Импортируем Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 import openai
 import logging
-import asyncio
 
 # Загрузка ключей из переменных окружения
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -53,12 +52,15 @@ application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, respond_
 def home():
     return "Бот работает!"
 
-# Обработчик для webhook, который будет обрабатывать POST запросы от Telegram
+# Flask маршрут для webhook (обработка POST запросов от Telegram)
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    update = request.get_json()  # Получаем JSON от Telegram
-    application.process_new_updates([Update.de_json(update, bot)])  # Обрабатываем обновление
-    return '', 200  # Ответ Telegram, что все хорошо
+    # Получаем данные от Telegram
+    json_str = request.get_data(as_text=True)
+    update = Update.de_json(json_str, bot)
+    # Передаем обновление в приложение
+    application.process_update(update)
+    return 'OK'
 
 # Функция для настройки webhook (асинхронная)
 async def set_webhook():
@@ -67,19 +69,20 @@ async def set_webhook():
     print("Webhook установлен!")
 
 # Вызов функции для установки webhook
+import asyncio
 asyncio.run(set_webhook())
 
 # Функция для запуска Telegram бота с Webhook
 def start_telegram_bot():
     application.run_webhook(
-        listen="0.0.0.0",  # Ожидаем подключения с любого IP
-        port=int(os.getenv("PORT", 5000)),  # Порт, который будет использоваться
+        listen="0.0.0.0", 
+        port=int(os.getenv("PORT", 5000)), 
         url_path="webhook"  # Путь для webhook
     )
 
 # Flask сервер для обработки запросов
 def run_flask():
-    app.run(host='0.0.0.0', port=int(os.getenv("PORT", 5000)))  # Запуск Flask сервера
+    app.run(host='0.0.0.0', port=int(os.getenv("PORT", 5000)))
 
 if __name__ == "__main__":
     # Запуск Flask сервера
