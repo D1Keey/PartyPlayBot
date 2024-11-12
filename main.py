@@ -1,6 +1,6 @@
 import os
-from flask import Flask, request
-from telegram import Bot, Update  # Импортируем Update
+from flask import Flask, request, jsonify
+from telegram import Bot, Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 import openai
 import logging
@@ -52,15 +52,13 @@ application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, respond_
 def home():
     return "Бот работает!"
 
-# Flask маршрут для webhook (обработка POST запросов от Telegram)
+# Обработчик webhook
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    # Получаем данные от Telegram
     json_str = request.get_data(as_text=True)
     update = Update.de_json(json_str, bot)
-    # Передаем обновление в приложение
     application.process_update(update)
-    return 'OK'
+    return jsonify({"status": "ok"}), 200
 
 # Функция для настройки webhook (асинхронная)
 async def set_webhook():
