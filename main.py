@@ -1,6 +1,6 @@
 import os
 from flask import Flask, request
-from telegram import Bot
+from telegram import Bot, Update  # Импортируем Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 import openai
 import logging
