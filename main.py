@@ -21,13 +21,13 @@ application = Application.builder().token(TELEGRAM_TOKEN).build()
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Запрос на создание ответа через OpenAI
+# Запрос на создание ответа через OpenAI с новой моделью
 async def respond_to_user(update: Update, context: CallbackContext) -> None:
     user_message = update.message.text
     try:
         response = await openai.Completion.create(
-            engine="text-davinci-003", 
-            prompt=user_message, 
+            model="gpt-3.5-turbo",  # Используем новую модель
+            prompt=user_message,
             max_tokens=100
         )
         await update.message.reply_text(response.choices[0].text.strip())
