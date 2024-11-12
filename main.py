@@ -1,10 +1,10 @@
 import os
-import openai
+import threading
+import asyncio
 from flask import Flask
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-import asyncio
-from threading import Thread
+import openai
 
 # Загрузка ключей из переменных окружения
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -21,7 +21,6 @@ application = Application.builder().token(TELEGRAM_TOKEN).build()
 # Flask приложение для Render
 app = Flask(__name__)
 
-# Асинхронные обработчики для Telegram бота
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text("Привет! Я бот на базе GPT. Напиши мне что-нибудь!")
 
@@ -43,18 +42,22 @@ application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, respond_
 def home():
     return "Бот работает!"
 
-# Функция для запуска Telegram бота в фоновом режиме
+# Функция для запуска Telegram бота
 def run_telegram_bot():
-    application.run_polling()
+    asyncio.run(application.start_polling())
 
-# Основная функция, которая запускает Flask сервер и Telegram бота
-def main():
-    # Запускаем Telegram бота в отдельном потоке
-    telegram_thread = Thread(target=run_telegram_bot)
-    telegram_thread.start()
-
-    # Запускаем Flask сервер
+# Функция для запуска Flask сервера
+def run_flask():
     app.run(host='0.0.0.0', port=int(os.getenv("PORT", 5000)))
 
-if __name__ == "__main__":
+# Основная функция, которая запускает оба сервиса
+def main():
+    # Запуск Flask сервера в отдельном потоке
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.start()
+
+    # Запуск Telegram бота
+    run_telegram_bot()
+
+if __name__ == '__main__':
     main()
