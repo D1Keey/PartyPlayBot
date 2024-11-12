@@ -55,10 +55,14 @@ def home():
 # Обработчик webhook
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    json_str = request.get_data(as_text=True)
-    update = Update.de_json(json_str, bot)
-    application.process_update(update)
-    return jsonify({"status": "ok"}), 200
+    try:
+        json_str = request.get_data(as_text=True)
+        update = Update.de_json(json_str, bot)
+        application.process_update(update)
+        return jsonify({"status": "ok"}), 200
+    except Exception as e:
+        logger.error(f"Ошибка при обработке webhook: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 # Функция для настройки webhook (асинхронная)
 async def set_webhook():
