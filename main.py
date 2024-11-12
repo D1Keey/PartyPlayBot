@@ -1,6 +1,6 @@
 import os
 from flask import Flask, request
-from telegram import Update, Bot
+from telegram import Bot
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 import openai
 import logging
@@ -52,14 +52,15 @@ application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, respond_
 def home():
     return "Бот работает!"
 
-# Функция для настройки webhook
-def set_webhook():
-    url = "https://your-deployment-url.com/YOUR_WEBHOOK_PATH"  # Укажите свой URL
-    bot.setWebhook(url)
+# Функция для настройки webhook (асинхронная)
+async def set_webhook():
+    url = "https://partyplaybot.onrender.com"  # Укажите свой URL
+    await bot.set_webhook(url)
     print("Webhook установлен!")
 
 # Вызов функции для установки webhook
-set_webhook()
+import asyncio
+asyncio.run(set_webhook())
 
 # Flask сервер для обработки запросов
 def run_flask():
