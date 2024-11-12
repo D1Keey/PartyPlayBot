@@ -1,6 +1,5 @@
 import os
 import threading
-import asyncio
 from flask import Flask
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
@@ -44,7 +43,7 @@ def home():
 
 # Функция для запуска Telegram бота
 def run_telegram_bot():
-    asyncio.run(application.start_polling())
+    application.run_polling()
 
 # Функция для запуска Flask сервера
 def run_flask():
